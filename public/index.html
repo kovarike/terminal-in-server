@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terminal</title>
+  <style>
+    body {
+      font-family: 'Courier New', Courier, monospace;
+      margin: 0;
+      padding: 0;
+      background-color: #f8f9fa;
+    }
+    #terminal {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    #input {
+      width: 70%;
+      height: 300px;
+      color: #E7DE79;
+      background-color: #44475a;
+      margin-bottom: 10px;
+      font-family: 'Courier New', Courier, monospace;
+    }
+    #output {
+      width: 70%;
+      height: 300px;
+      overflow-y: auto;
+      border: 1px solid #ced4da;
+      
+      padding: 10px;
+      font-family: 'Courier New', Courier, monospace;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="terminal">
+    <textarea id="input" rows="10" cols="50"></textarea>
+    <!-- <pre id="output"></pre> -->
+  </div>
+  <script>
+    const inputElement = document.getElementById('input');
+    // const outputElement = document.getElementById('output');
+
+    // Função para adicionar texto ao textarea de entrada
+    function addInputText(text) {
+      inputElement.value += text;
+      // inputElement.value.trim().split(`${Data}\n`).pop() += text
+      inputElement.scrollTop = inputElement.scrollHeight; // Rolagem automática para o final
+    }
+
+    // Função para adicionar texto ao textarea de saída
+    // function addOutputText(text) {
+    //   outputElement.textContent += text;
+    //   outputElement.scrollTop = outputElement.scrollHeight; // Rolagem automática para o final
+    // }
+
+    // Atualiza o diretório atual na textarea de entrada
+    let Data;
+    function updateDirectory() {
+      fetch('/exe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ command: 'pwd' })
+      })
+      .then(response => response.text())
+      .then(data => {
+        Data = data;
+        addInputText(`${data.trim()} #->\n `); // Adiciona o diretório atual
+      })
+      .catch(error => {
+        console.error('Erro ao obter o diretório atual:', error);
+      });
+    }
+
+    // Chama a função updateDirectory() quando a página carrega
+    window.onload = updateDirectory;
+
+    // Evento de tecla para enviar o comando quando Enter é pressionado
+    inputElement.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault(); // Evita a quebra de linha na textarea
+        sendCommand();
+      }
+    });
+
+    // Função para enviar o comando e atualizar a saída
+    function sendCommand() {
+      const input = inputElement.value.trim().split('\n').pop();
+      console.log("oi",input) // Obtém o último comando digitado
+      fetch('/exe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ command: input })
+      })
+      .then(response => response.text())
+      .then((data) => {
+        addInputText(`\n|=> ${input} \n${data}\n`); // Adiciona o comando digitado
+        // addOutputText(`${data}\n`); // Adiciona a saída do comando
+        updateDirectory(); // Atualiza o diretório atual
+        input.trim().split().pop();
+      })
+      .catch(error => {
+        console.error('Erro ao executar o comando:', error);
+      });
+
+      // Limpa a textarea de entrada após o envio do comando
+      inputElement.value += ''; // Adiciona uma nova linha
+    }
+  </script>
+</body>
+</html>
